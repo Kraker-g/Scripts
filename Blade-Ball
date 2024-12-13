@@ -14,7 +14,7 @@ textLabel.BackgroundTransparency = 1 -- Transparan
 textLabel.TextColor3 = Color3.new(1, 1, 1) -- Warna teks (putih)
 textLabel.TextScaled = true -- Teks otomatis menyesuaikan Our Blade Ball Is Discontinued😔, Thanks for linkvertise anyways😃(Join our discord!) 
 textLabel.Font = Enum.Font.SourceSansBold -- Font teks
-textLabel.Text = ""
+textLabel.Text = "Blade Ball script discontinue"
 
 -- Pastikan teks tetap tampil
 while true do
