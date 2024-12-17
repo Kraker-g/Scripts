@@ -1,22 +1,376 @@
--- Script untuk menampilkan teks di layar Roblox
+-- Wait for game to load
+repeat
+    wait()
+until game:IsLoaded()
 
--- Membuat ScreenGui
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "PersistentTextGui"
-screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
--- Membuat TextLabel
-local textLabel = Instance.new("TextLabel")
-textLabel.Parent = screenGui
-textLabel.Size = UDim2.new(1, 0, 0.2, 0) -- Ukuran (lebar penuh, tinggi 20%)
-textLabel.Position = UDim2.new(0, 0, 0.4, 0) -- Posisi di tengah layar
-textLabel.BackgroundTransparency = 1 -- Transparan
-textLabel.TextColor3 = Color3.new(1, 1, 1) -- Warna teks (putih)
-textLabel.TextScaled = true -- Teks otomatis menyesuaikan Our Blade Ball Is Discontinued😔, Thanks for linkvertise anyways😃(Join our discord!) 
-textLabel.Font = Enum.Font.SourceSansBold -- Font teks
-textLabel.Text = "Blade Ball script discontinue"
 
--- Pastikan teks tetap tampil
-while true do
-    wait() -- Loop terus-menerus agar GUI tetap ada (meskipun sebenarnya tidak perlu karena GUI sudah permanen)
+
+-- Load external scripts
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
+local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
+
+-- Define services and variables
+local workspace = game:GetService("Workspace")
+local players = game:GetService("Players")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local localPlayer = players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local LogService = game:GetService("LogService")
+local Balls = workspace:WaitForChild("Balls", 9e9)
+local Remotes = replicatedStorage:WaitForChild("Remotes", 9e9)
+
+-- Game-specific variables
+local LookAt = nil
+local Paws = false
+local Debug = false
+local LookAtMethod = "Player CFrame"
+local DeflectionMethod = "Remote"
+local DistanceToHit = 10
+local CanHit = false
+local IsTargeted = false
+
+
+
+-- Function to verify if ball is real
+local function VerifyBall(Ball)
+    return typeof(Ball) == "Instance" and Ball:IsA("BasePart") and Ball:IsDescendantOf(Balls) and Ball:GetAttribute("realBall") == true
 end
+
+-- Method to detect target (can be ball or player highlight)
+function IsTheTarget()
+    if MethodToDetect == "Player Highlight" then
+        return localPlayer.Character and localPlayer.Character:FindFirstChild("Highlight")
+    elseif MethodToDetect == "Ball Highlight" then
+        for _, ball in ipairs(Balls:GetChildren()) do
+            if ball:IsA("Part") and ball.BrickColor == BrickColor.new("Really red") then
+                return true
+            end
+        end
+    elseif MethodToDetect == "Ball Target" then
+        for _, ball in ipairs(Balls:GetChildren()) do
+            if ball:GetAttribute("target") == localPlayer.Name then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- Define deflection methods
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+function RemoteHit()
+    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0.001)  -- Mouse Down
+    VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0.001) -- Mouse Up
+end
+
+function FunctionHit()
+    if Parry then Parry() end
+end
+
+function KeyPressHit()
+    keypress(0x46) -- Key F
+    keyrelease(0x46)
+end
+
+local function HitTheBall()
+    if DeflectionMethod == "Remote" then
+        RemoteHit()
+    elseif DeflectionMethod == "Function" then
+        FunctionHit()
+    elseif DeflectionMethod == "Key Press" then
+        KeyPressHit()
+    end
+end
+
+-- Ball tracking and deflection logic
+Balls.ChildAdded:Connect(function(Ball)
+    if not VerifyBall(Ball) then return end
+    local OldPosition = Ball.Position
+    local OldTick = tick()
+    Ball:GetPropertyChangedSignal("Position"):Connect(function()
+        if IsTheTarget() and Paws then
+            local Distance = (Ball.Position - workspace.CurrentCamera.Focus.Position).Magnitude
+            local Velocity = (OldPosition - Ball.Position).Magnitude
+            if Velocity > 0 and (Distance / Velocity) <= DistanceToHit then
+                HitTheBall()
+            end
+        end
+        if tick() - OldTick >= 1 / 60 then
+            OldTick = tick()
+            OldPosition = Ball.Position
+        end
+    end)
+end)
+
+-- Shared config for adjustments
+shared.config = {
+    adjustment = 3.7, -- Keep this between 3 to 4
+    hit_range = 0.7 -- Adjust this to your liking
+}
+
+-- Find the real ball
+local function FindBall()
+    for _, ball in ipairs(Balls:GetChildren()) do
+        if ball:GetAttribute("realBall") == true then
+            return ball
+        end
+    end
+    return nil
+end
+
+-- Detect the ball for deflection
+local function DetectBall()
+    local Ball = FindBall()
+    if Ball then
+        local BallVelocity = Ball.Velocity.Magnitude
+        local BallPosition = Ball.Position
+        local PlayerPosition = localPlayer.Character.HumanoidRootPart.Position
+        local Distance = (BallPosition - PlayerPosition).Magnitude
+        local PingAccountability = BallVelocity * (game.Stats.Network.ServerStatsItem["Data Ping"]:GetValue() / 1000)
+        Distance = Distance - PingAccountability - shared.config.adjustment
+        return (Distance / BallVelocity) <= shared.config.hit_range
+    end
+    return false
+end
+
+-- Deflect ball if target detected and ball is in range
+local function DeflectBall()
+    if IsTargeted and DetectBall() then
+        HitTheBall()
+    end
+end
+
+RunService.PostSimulation:Connect(function()
+    IsTargeted = IsTheTarget()
+    if CanHit then
+        DeflectBall()
+    end
+end)
+
+
+-- Keep an eye on ball for real ball tracking
+local Balls = Workspace:FindFirstChild("Balls")
+function IsReal()
+    local Re
+    for i, v in next, Balls:GetChildren() do
+        if v:GetAttribute("realBall") and v:GetAttribute("target") == Player.Name then
+            Re = v
+        end
+    end
+    return Re
+end
+
+function Baller()
+    local Real = nil
+    for i, v in next, Balls:GetChildren() do
+        if v:GetAttribute("realBall") then
+            Real = v
+        end
+    end
+    return Real
+end
+
+-- Keep looking at the ball and adjust the player's or camera's position accordingly
+
+-- Optionally randomize distance to hit
+local Randomize = false
+RunService.Stepped:Connect(function()
+    if Randomize then
+        DistanceToHit = math.random(10, 14)
+    end
+end)
+
+local ScreenGui = Instance.new("ScreenGui")
+local ImageButton = Instance.new("ImageButton")
+local UICorner = Instance.new("UICorner")
+
+-- Configure the ScreenGui
+ScreenGui.Parent = game.CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Configure the ImageButton
+ImageButton.Parent = ScreenGui
+ImageButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+ImageButton.BorderSizePixel = 0
+ImageButton.Position = UDim2.new(0.120833337, 0, 0.0952890813, 0)
+ImageButton.Size = UDim2.new(0, 50, 0, 50)
+ImageButton.Image = "rbxthumb://type=Asset&id=16014323175&w=150&h=150" -- Set the image using the decal ID
+ImageButton.Draggable = true
+
+-- Add UICorner for rounded corners
+UICorner.Parent = ImageButton
+
+-- Function to handle click event
+ImageButton.MouseButton1Click:Connect(function()
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.LeftControl, false, game)
+end)
+
+-- GUI setup and controls
+local Window = Fluent:CreateWindow({
+    Title = game:GetService("MarketplaceService"):GetProductInfo(16732694052).Name .."Star X V2[BETA]",
+    SubTitle = "By Code4X",
+    TabWidth = 100,
+    Size = UDim2.fromOffset(550, 350),
+    Acrylic = false,
+    Theme = "Darker",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+-- Tabs setup for the interface
+local Tabs = {
+    Home = Window:AddTab({ Title = "Home", Icon = "home" }),
+    Main = Window:AddTab({ Title = "Combat", Icon = "swords" }),
+    Adj = Window:AddTab({ Title = "Sub Combat", Icon = "sword" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+}
+            
+	local r = Tabs.Home:AddSection("Information ✨")
+				    
+Tabs.Home:AddParagraph({
+        Title = "Owner",
+        Content = "-CodeE4X"
+})
+
+Tabs.Home:AddButton({
+    Title = "Copy Discord Link",
+    Description = "https://discord.gg/EwARkGncq4",
+    Callback = function()
+        setclipboard("https://discord.gg/EwARkGncq4")
+    end
+})
+            
+	local Infor = Tabs.Main:AddSection("Auto Parry ⚔️")
+				    
+           
+				local Toggle = Tabs.Main:AddToggle("Config", {Title = "Auto Parry v1", Description = "This Parry Based On Range", Default = false })
+Toggle:OnChanged(function(state)  
+    CanHit = state
+end) 
+            
+local Toggle = Tabs.Main:AddToggle("Config", {Title = "Auto Parry v2", Description = "This Auto Parry Based On Your Ping", Default = false })
+Toggle:OnChanged(function(state)  
+        CanHit = state
+        Paws = state
+end)  
+            
+
+
+
+local Toggle = Tabs.Main:AddToggle("MyToggle", 
+{
+    Title = "Manual Spam", 
+    Description = "Under Development",
+    Default = false,
+    Callback = function()
+        print("pekaboo")
+    end 
+})
+
+
+            
+	local ii = Tabs.Adj:AddSection("Config 1")
+				    
+            
+Tabs.Adj:AddParagraph({
+        Title = "Configs V1 Manual Range",
+        Content = "you can edit the parry system on here"
+})
+local HitSlider = Tabs.Adj:AddSlider("DistanceHit", {
+        Title = "Parry Range",
+        Description = "This is the range for parrying the ball",
+        Default = 10,
+        Min = 5.5,
+        Max = 20,
+        Rounding = 0.5,
+        Callback = function(Value)
+        end
+})
+    HitSlider:OnChanged(function(Value)
+            DistanceToHit = tonumber(Value)
+end)
+local Random = Tabs.Adj:AddToggle("Random",{Title = "Radomize Distance To Hit",Default = false })
+Random:OnChanged(function(Value)
+        Randomize = Value
+end)
+
+local iif = Tabs.Adj:AddSection("Config 2")
+				  
+Tabs.Adj:AddParagraph({
+        Title = "Configs V2 ping based",
+        Content = "You Can Change Stuff Here To Your Liking. This Is For The Auto Parry Ping Based, Anything Adjusted In DIstance Based Adjustments Wont Be Applied Here."
+})
+local HitSlider2 = Tabs.Adj:AddSlider("OffSetHit", {
+        Title = "Parry Offset",
+        Description = "It uses Parry Offset to calcukate your parry distance, (acts like Manual range Tbh)",
+        Default = 3.7,
+        Min = 2.5,
+        Max = 4.5,
+        Rounding = 1,
+        Callback = function(Value)
+        end
+})
+    HitSlider2:OnChanged(function(Value)
+           shared.config.adjustment  = tonumber(Value)
+end)
+local HitSlider3 = Tabs.Adj:AddSlider("HitRange", {
+        Title = "Hit Range",
+        Description = "Parry Range",
+        Default = 0.6,
+        Min = 0.3,
+        Max = 1,
+        Rounding = 1,
+        Callback = function(Value)
+        end
+})
+    HitSlider3:OnChanged(function(Value)
+           shared.config.hit_range  = tonumber(Value)
+end)
+
+
+Tabs.Adj:AddParagraph({
+        Title = "Adjustments (For Both)",
+        Content = "You Can Change Stuff Here To Your Liking. This Is For Both Distance And Ping Based Parry, Anything Adjusted Here Will Apply For Both."
+})
+local MethodP = Tabs.Adj:AddDropdown("MethodParry", {
+        Title = "Auto Parry Method",
+        Values = {"Remote","Function","Key Press"},
+        Multi = false,
+        Default = "Remote",
+    })
+    MethodP:OnChanged(function(Value)
+            DeflectionMethod = Value
+end)
+local MethodD = Tabs.Adj:AddDropdown("MethodDetect", {
+        Title = "Detection Method",
+        Values = {"Player Highlight","Ball Highlight","Ball Target"},
+        Multi = false,
+        Default = "Player Highlight",
+    })
+    MethodD:OnChanged(function(Value)
+            MethodToDetect = Value
+end)
+
+
+
+SaveManager:SetLibrary(Fluent)
+InterfaceManager:SetLibrary(Fluent)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({})
+InterfaceManager:SetFolder("BLADEBALLSTARX")
+SaveManager:SetFolder("BLADEBALLSTARX")
+InterfaceManager:BuildInterfaceSection(Tabs.Settings)
+SaveManager:BuildConfigSection(Tabs.Settings)
+Window:SelectTab(1)
+SaveManager:LoadAutoloadConfig()
+Fluent:Notify({
+    Title = "Join Our Discord Gayying",
+    Content = "https://discord.gg/EwARkGncq4",
+    Duration = 4
+})
+
+            
+print("Star X has been loaded!")
